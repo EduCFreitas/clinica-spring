@@ -14,17 +14,27 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.generation.clinica.model.Especialidade;
 import com.generation.clinica.model.Medico;
+import com.generation.clinica.repository.EspecialidadeRepository;
 import com.generation.clinica.repository.MedicoRepository;
+import com.generation.clinica.restDTO.MedicoDTO;
+
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/medico")
 @CrossOrigin("*")
+@RequiredArgsConstructor
 public class MedicoController {
-	@Autowired
-	private MedicoRepository repository;
+//	@Autowired
+//	private MedicoRepository repository;
+	
+	private final EspecialidadeRepository especialidadeRepository;
+	private final MedicoRepository repository;
+	
 	
 	@GetMapping("/{crm}")
 	public ResponseEntity<Medico> GetById(@PathVariable String crm){
@@ -43,9 +53,24 @@ public class MedicoController {
 		return ResponseEntity.ok(repository.findAllByNomeContainingIgnoreCase(nome));
 	}
 	
+//	@PostMapping
+//	public ResponseEntity<Medico> post(@RequestBody Medico medico){
+//		return ResponseEntity.status(HttpStatus.CREATED).body(repository.save(medico));
+//	}
+	
 	@PostMapping
-	public ResponseEntity<Medico> post(@RequestBody Medico medico){
-		return ResponseEntity.status(HttpStatus.CREATED).body(repository.save(medico));
+	public Medico salvar (@RequestBody MedicoDTO dto) {
+		Long codEspecialidade = dto.getCodEspecialidade();
+		
+		Especialidade especialidade = especialidadeRepository.findById(codEspecialidade)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Especialidade inexistente."));
+		
+		Medico medico = new Medico();
+		medico.setEspecialidade(especialidade);
+		medico.setCrm(dto.getCrm());
+		medico.setNome(dto.getNome());
+		
+		return repository.save(medico);
 	}
 	
 	@PutMapping
